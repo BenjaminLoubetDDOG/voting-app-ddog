@@ -13,6 +13,8 @@ spec:
     metadata:
       labels:
         app: result
+      annotations:
+        ad.datadoghq.com/result.logs: '[{"source":"nodejs","service":"result"}]'
     spec:
       containers:
       - image: dockersamples/examplevotingapp_result

@@ -13,6 +13,8 @@ spec:
     metadata:
       labels:
         app: db
+      annotations:
+        ad.datadoghq.com/db.logs: '[{"source":"postgres","service":"db"}]'
     spec:
       containers:
       - image: postgres:15-alpine

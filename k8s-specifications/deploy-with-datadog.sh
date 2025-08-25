@@ -4,9 +4,7 @@ set -euo pipefail
 # ====== Required ENV (fill before running) ======
 # GHCR (private)
 : "${IMAGE_OWNER:?Set IMAGE_OWNER, e.g. benjaminloubetddog}"
-: "${VOTE_TAG:?Set VOTE_TAG}"
-: "${RESULT_TAG:?Set RESULT_TAG}"
-: "${WORKER_TAG:?Set WORKER_TAG}"
+# Using :latest tags for all images
 : "${GHCR_PAT:?Set GHCR_PAT (GitHub PAT with read:packages)}"
 
 # Datadog
@@ -48,12 +46,7 @@ k(){ kubectl "$@"; }
 kns(){ kubectl -n "$NS_APP" "$@"; }
 # put this near the top, with other helpers
 get_tag_for() {
-  case "$1" in
-    vote)   echo "${VOTE_TAG}";;
-    result) echo "${RESULT_TAG}";;
-    worker) echo "${WORKER_TAG}";;
-    *)      echo "latest";;
-  esac
+  echo "latest"
 }
 
 preflight(){
@@ -299,9 +292,9 @@ deploy_app(){
 
   # Point to your images
   info "Setting images to GHCR…"
-  kns set image deploy/vote   vote=${IMAGE_REG}/voting-app-vote:${VOTE_TAG} || true
-  kns set image deploy/result result=${IMAGE_REG}/voting-app-result:${RESULT_TAG} || true
-  kns set image deploy/worker worker=${IMAGE_REG}/voting-app-worker:${WORKER_TAG} || true
+  kns set image deploy/vote   vote=${IMAGE_REG}/voting-app-vote:latest || true
+  kns set image deploy/result result=${IMAGE_REG}/voting-app-result:latest || true
+  kns set image deploy/worker worker=${IMAGE_REG}/voting-app-worker:latest || true
 
   # SSI opt-in + Unified Service Tagging
   info "Labeling namespace and deployments for SSI + UST…"

@@ -13,6 +13,8 @@ spec:
     metadata:
       labels:
         app: redis
+      annotations:
+        ad.datadoghq.com/redis.logs: '[{"source":"redis","service":"redis"}]'
     spec:
       containers:
       - image: redis:alpine

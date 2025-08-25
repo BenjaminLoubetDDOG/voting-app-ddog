@@ -8,6 +8,30 @@
     <meta name="keywords" content="docker-compose, docker, stack">
     <meta name="author" content="Docker">
     <link rel='stylesheet' href='/stylesheets/style.css' />
+    <!-- Datadog RUM -->
+    <script>
+      (function(h,o,u,n,d) {
+        h=h[d]=h[d]||{q:[],onReady:function(c){h.q.push(c)}}
+        d=o.createElement(u);d.async=1;d.src=n
+        n=o.getElementsByTagName(u)[0];n.parentNode.insertBefore(d,n)
+      })(window,document,'script','https://www.datadoghq-browser-agent.com/us1/v6/datadog-rum.js','DD_RUM')
+      window.DD_RUM.onReady(function() {
+        window.DD_RUM.init({
+          clientToken: 'pube3da80f5045f15b082baffe60e94bafe',
+          applicationId: 'a5224e3e-8314-49dc-99ab-c0bfdc455f0d',
+          // `site` refers to the Datadog site parameter of your organization
+          // see https://docs.datadoghq.com/getting_started/site/
+          site: 'datadoghq.com',
+          service: 'result',
+          env: 'demo',
+          // Specify a version number to identify the deployed version of your application in Datadog
+          // version: '1.0.0',
+          sessionSampleRate: 100,
+          sessionReplaySampleRate: 100,
+          defaultPrivacyLevel: 'mask-user-input',
+        });
+      })
+    </script>
   </head>
   <body ng-controller="statsCtrl" >
      <div id="background-stats">
