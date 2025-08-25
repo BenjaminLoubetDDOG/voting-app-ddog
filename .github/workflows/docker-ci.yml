@@ -65,7 +65,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.IMAGE_PREFIX }}${matrix.service }
+            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.IMAGE_PREFIX }}${{ matrix.service }}
           tags: |
             type=raw,value=sha-${{ github.sha }}
             type=ref,event=branch
