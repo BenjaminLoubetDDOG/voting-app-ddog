@@ -299,9 +299,9 @@ deploy_app(){
 
   # Point to your images
   info "Setting images to GHCR…"
-  kns set image deploy/vote   vote=${IMAGE_REG}/vote:${VOTE_TAG} || true
-  kns set image deploy/result result=${IMAGE_REG}/result:${RESULT_TAG} || true
-  kns set image deploy/worker worker=${IMAGE_REG}/worker:${WORKER_TAG} || true
+  kns set image deploy/vote   vote=${IMAGE_REG}/voting-app-vote:${VOTE_TAG} || true
+  kns set image deploy/result result=${IMAGE_REG}/voting-app-result:${RESULT_TAG} || true
+  kns set image deploy/worker worker=${IMAGE_REG}/voting-app-worker:${WORKER_TAG} || true
 
   # SSI opt-in + Unified Service Tagging
   info "Labeling namespace and deployments for SSI + UST…"
