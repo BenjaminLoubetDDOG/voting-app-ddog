@@ -46,7 +46,7 @@ k(){ kubectl "$@"; }
 kns(){ kubectl -n "$NS_APP" "$@"; }
 # put this near the top, with other helpers
 get_tag_for() {
-  echo "latest"
+  echo "master"
 }
 
 preflight(){
@@ -292,9 +292,9 @@ deploy_app(){
 
   # Point to your images
   info "Setting images to GHCR…"
-  kns set image deploy/vote   vote=${IMAGE_REG}/voting-app-vote:latest || true
-  kns set image deploy/result result=${IMAGE_REG}/voting-app-result:latest || true
-  kns set image deploy/worker worker=${IMAGE_REG}/voting-app-worker:latest || true
+  kns set image deploy/vote   vote=${IMAGE_REG}/voting-app-vote:master || true
+  kns set image deploy/result result=${IMAGE_REG}/voting-app-result:master || true
+  kns set image deploy/worker worker=${IMAGE_REG}/voting-app-worker:master || true
 
   # SSI opt-in + Unified Service Tagging
   info "Labeling namespace and deployments for SSI + UST…"
