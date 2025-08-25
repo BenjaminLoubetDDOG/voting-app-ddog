@@ -1,0 +1,47 @@
+env:
+- name: STATSD_HOST
+  value: datadog-dogstatsd.datadog.svc.cluster.local
+- name: STATSD_PORT
+  value: "8125"
+datadog:
+  site: datadoghq.com
+  apiKeyExistingSecret: datadog-secret
+
+    # --- Core ---
+  clusterName: minikube-demo
+  kubelet:
+    tlsVerify: false
+  apm:
+    instrumentation:
+      enabled: true
+      targets:
+        - name: "default-target"
+          ddTraceVersions:
+            java: "1"
+            python: "3"
+            js: "5"
+            php: "1"
+            dotnet: "3"
+  logs:
+    enabled: true
+    containerCollectAll: true
+  serviceMonitoring:
+    enabled: true
+  networkMonitoring:
+    enabled: true
+  processAgent:
+    processCollection: true
+  dogstatsd:
+    originDetection: true
+    tagCardinality: orchestrator
+agents:
+  containers:
+    agent:
+      # Explicitly force logs-agent to tail all container logs
+      extraConfd:
+        logs.yaml: |-
+          logs:
+            - type: docker
+              service: autodiscovered
+              source: docker
+              container_collect_all: true

@@ -13,6 +13,8 @@ spec:
     metadata:
       labels:
         app: worker
+      annotations:
+        ad.datadoghq.com/worker.logs: '[{"source":"csharp","service":"worker"}]'
     spec:
       containers:
       - image: dockersamples/examplevotingapp_worker

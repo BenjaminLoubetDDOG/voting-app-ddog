@@ -13,6 +13,8 @@ spec:
     metadata:
       labels:
         app: vote
+      annotations:
+        ad.datadoghq.com/vote.logs: '[{"source":"python","service":"vote"}]'
     spec:
       containers:
       - image: dockersamples/examplevotingapp_vote

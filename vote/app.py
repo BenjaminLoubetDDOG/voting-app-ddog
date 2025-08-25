@@ -1,10 +1,21 @@
 from flask import Flask, render_template, request, make_response, g
 from redis import Redis
+from datadog import DogStatsd
 import os
 import socket
 import random
 import json
 import logging
+import os
+from datadog import DogStatsd
+
+
+
+# DogStatsD client – use DD_AGENT_HOST if available, fallback to localhost
+statsd = DogStatsd(
+    host=os.getenv("STATSD_HOST","127.0.0.1"),
+    port=int(os.getenv("STATSD_PORT","8125"))
+)
 
 option_a = os.getenv('OPTION_A', "Cats")
 option_b = os.getenv('OPTION_B', "Dogs")
@@ -28,13 +39,19 @@ def hello():
         voter_id = hex(random.getrandbits(64))[2:-1]
 
     vote = None
-
+    
     if request.method == 'POST':
         redis = get_redis()
         vote = request.form['vote']
         app.logger.info('Received vote for %s', vote)
         data = json.dumps({'voter_id': voter_id, 'vote': vote})
         redis.rpush('votes', data)
+
+        # 🔥 custom metric to Datadog
+        statsd.increment(
+            "voting_app.vote.submitted",
+            tags=[f"option:{vote}", "service:vote", "env:demo"]
+        )
 
     resp = make_response(render_template(
         'index.html',
