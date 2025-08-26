@@ -32,6 +32,10 @@
           sessionSampleRate: 100,
           sessionReplaySampleRate: 100,
           defaultPrivacyLevel: 'mask-user-input',
+          // Essential for RUM/APM correlation
+          trackResources: true,
+          trackLongTasks: true,
+          trackUserInteractions: true,
         });
       })
     </script>
