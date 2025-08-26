@@ -11,6 +11,7 @@ set -euo pipefail
 : "${DD_API_KEY:?Set DD_API_KEY}"
 : "${DD_SITE:=datadoghq.com}"     # us site (you provided .com). ex: datadoghq.eu for EU
 : "${DD_ENV:=demo}"
+: "${DD_VERSION:=}"               # Optional: override version (e.g., DD_VERSION=v1.2.3)
 
 # Scope
 : "${SSI_SCOPE:=opt-in}"          # opt-in or all
@@ -46,7 +47,24 @@ k(){ kubectl "$@"; }
 kns(){ kubectl -n "$NS_APP" "$@"; }
 # put this near the top, with other helpers
 get_tag_for() {
-  echo "master"
+  local service="$1"
+  
+  # Option 1: Use environment variable override if set
+  if [ -n "${DD_VERSION:-}" ]; then
+    echo "${DD_VERSION}"
+    return
+  fi
+  
+  # Option 3: Use git commit SHA (short) + timestamp (PRIMARY METHOD)
+  local git_sha=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+  local timestamp=$(date +%Y%m%d-%H%M)
+  
+  # Add dirty flag if there are uncommitted changes
+  if git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null; then
+    echo "${git_sha}-${timestamp}"
+  else
+    echo "${git_sha}-${timestamp}-dirty"
+  fi
 }
 
 preflight(){
