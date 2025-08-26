@@ -25,7 +25,9 @@
           site: 'datadoghq.com',
           service: 'vote',
           env: 'demo',
-          allowedTracingUrls: ['/'],
+          allowedTracingUrls: [
+            { match: '/', propagatorTypes: ['datadog'] }
+          ],
           // Specify a version number to identify the deployed version of your application in Datadog
           // version: '1.0.0',
           sessionSampleRate: 100,
@@ -58,10 +60,52 @@
     <script src="http://code.jquery.com/jquery-latest.min.js" type="text/javascript"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
 
+    <script>
+      $(document).ready(function() {
+        // Handle form submission with AJAX for RUM/APM correlation
+        $('#choice').on('submit', function(e) {
+          e.preventDefault(); // Prevent traditional form submission
+          
+          var clickedButton = $(document.activeElement);
+          var vote = clickedButton.val();
+          
+          // Use fetch() so RUM can inject correlation headers
+          fetch('/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'vote=' + vote
+          })
+          .then(response => response.text())
+          .then(data => {
+            // Update UI after successful vote
+            updateVoteDisplay(vote);
+          })
+          .catch(error => {
+            console.error('Vote submission failed:', error);
+          });
+        });
+        
+        function updateVoteDisplay(vote) {
+          if(vote == "a"){
+            $(".a").prop('disabled', true);
+            $(".a").html('{{option_a}} <i class="fa fa-check-circle"></i>');
+            $(".b").css('opacity','0.5');
+          }
+          if(vote == "b"){
+            $(".b").prop('disabled', true);
+            $(".b").html('{{option_b}} <i class="fa fa-check-circle"></i>');
+            $(".a").css('opacity','0.5');
+          }
+        }
+      });
+    </script>
+
     {% if vote %}
     <script>
+      // Initial vote display if page loads with existing vote
       var vote = "{{vote}}";
-
       if(vote == "a"){
         $(".a").prop('disabled', true);
         $(".a").html('{{option_a}} <i class="fa fa-check-circle"></i>');
