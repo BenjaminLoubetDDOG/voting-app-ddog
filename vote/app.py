@@ -23,6 +23,14 @@ hostname = socket.gethostname()
 
 app = Flask(__name__)
 
+# Configure logging format for Datadog correlation
+FORMAT = ('%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] '
+          '[dd.service=%(dd.service)s dd.env=%(dd.env)s dd.version=%(dd.version)s dd.trace_id=%(dd.trace_id)s dd.span_id=%(dd.span_id)s] '
+          '- %(message)s')
+
+# Set up logging with the Datadog format
+logging.basicConfig(format=FORMAT, level=logging.INFO)
+
 gunicorn_error_logger = logging.getLogger('gunicorn.error')
 app.logger.handlers.extend(gunicorn_error_logger.handlers)
 app.logger.setLevel(logging.INFO)

@@ -116,11 +116,6 @@ pl_uninstall() {
 
 write_dd_values(){
   cat > "${SCRIPT_DIR}/dd-values.yaml" <<YAML
-env:
-- name: STATSD_HOST
-  value: datadog-dogstatsd.datadog.svc.cluster.local
-- name: STATSD_PORT
-  value: "8125"
 datadog:
   site: ${DD_SITE}
   apiKeyExistingSecret: datadog-secret
