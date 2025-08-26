@@ -13,8 +13,8 @@ from datadog import DogStatsd
 
 # DogStatsD client – use DD_AGENT_HOST if available, fallback to localhost
 statsd = DogStatsd(
-    host=os.getenv("STATSD_HOST","127.0.0.1"),
-    port=int(os.getenv("STATSD_PORT","8125"))
+    host=os.getenv("DD_AGENT_HOST","127.0.0.1"),
+    port=int(os.getenv("DD_DOGSTATSD_PORT","8125"))
 )
 
 option_a = os.getenv('OPTION_A', "Cats")

@@ -150,8 +150,9 @@ datadog:
   processAgent:
     processCollection: true
   dogstatsd:
-    originDetection: true
-    tagCardinality: orchestrator
+    port: 8125
+    useHostPort: true
+    nonLocalTraffic: true
 agents:
   containers:
     agent:
@@ -163,81 +164,6 @@ agents:
               service: autodiscovered
               source: docker
               container_collect_all: true
-YAML
-}
-
-# Old version
-write_dd_values_old(){
-  cat > "${SCRIPT_DIR}/dd-values.yaml" <<YAML
-datadog:
-  site: ${DD_SITE}
-  apiKeyExistingSecret: datadog-secret
-
-    # --- Core ---
-  clusterName: minikube-demo
-
-  # Kubelet on Minikube often uses a self-signed cert
-  kubelet:
-    tlsVerify: false
-
-  # --- Logs / Metrics ---
-  logs:
-    enabled: true
-
-  # --- APM / Tracing ---
-  # 'apm.enabled' is DEPRECATED. Use 'portEnabled' (TCP 8126) and 'socketEnabled' (UDS) instead.
-  apm:
-    portEnabled: true        # expose TCP 8126 for tracers that use host/service access
-    socketEnabled: true      # keep UDS enabled (default true)
-    instrumentation:
-      enabled: true          # Single-Step Instrumentation (SSI)
-$( if [ "${SSI_SCOPE}" = "opt-in" ]; then cat <<'EOT'
-      targets:
-        - name: apm-instrumented
-          podSelector:
-            matchLabels:
-              datadoghq.com/apm-instrumentation: "enabled"
-EOT
-fi
-)
-
-  # --- Process / Containers / KSM / Prometheus ---
-  processAgent:
-    enabled: true
-    processCollection: true
-
-  logCollection:
-    enabled: true
-    containerCollectAll: true
-
-  orchestratorExplorer:
-    enabled: true
-
-  kubeStateMetricsEnabled: true
-
-  prometheusScrape:
-    enabled: true
-
-  # --- Network / Security / Profiler / OTLP ---
-  networkMonitoring:
-    enabled: true
-
-  securityAgent:
-    runtime:
-      enabled: true
-    compliance:
-      enabled: true
-
-  profiler:
-    enabled: true
-
-  otlp:
-    enabled: true
-
-# Cluster Agent defaults are fine for Minikube. For production HA, set:
-# clusterAgent:
-#   replicas: 2
-#   createPodDisruptionBudget: true
 YAML
 }
 

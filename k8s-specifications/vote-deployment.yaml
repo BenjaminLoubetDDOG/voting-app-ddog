@@ -22,3 +22,8 @@ spec:
         ports:
         - containerPort: 80
           name: vote
+        env:
+            - name: DD_AGENT_HOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
