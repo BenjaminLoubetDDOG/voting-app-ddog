@@ -12,9 +12,11 @@ RUN npm install -g nodemon
 
 COPY package*.json ./
 
-RUN npm ci && \
- npm cache clean --force && \
- mv /usr/local/app/node_modules /node_modules
+# Remove existing package-lock.json to allow fresh install with new dependencies
+RUN rm -f package-lock.json && \
+    npm install && \
+    npm cache clean --force && \
+    mv /usr/local/app/node_modules /node_modules
 
 COPY . .
 
