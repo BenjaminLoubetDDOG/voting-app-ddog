@@ -67,6 +67,27 @@
       <span ng-if="total == 1">{{total}} vote</span>
       <span ng-if="total >= 2">{{total}} votes</span>
     </div>
+    
+    <!-- User Action Buttons for RUM/APM Correlation -->
+    <div id="action-buttons">
+      <button class="action-btn" ng-click="refreshData()" ng-disabled="loading">
+        <span ng-if="!loading">🔄 Refresh Data</span>
+        <span ng-if="loading">⏳ Loading...</span>
+      </button>
+      
+      <button class="action-btn" ng-click="getStats()">
+        📊 Get Detailed Stats
+      </button>
+      
+      <button class="action-btn" ng-click="exportResults()">
+        📥 Export Results
+      </button>
+    </div>
+    
+    <!-- Status messages -->
+    <div id="status-message" ng-if="statusMessage" class="{{statusClass}}">
+      {{statusMessage}}
+    </div>
     <script src="socket.io.js"></script>
     <script src="angular.min.js"></script>
     <script src="app.js"></script>

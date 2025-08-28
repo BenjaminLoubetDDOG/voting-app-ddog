@@ -293,10 +293,10 @@ start_pf(){
   info "Starting port-forwards..."
   
   # Start port-forwards (simplified - always use port 80 for target)
-  kns port-forward svc/vote "${VOTE_LOCAL_PORT}:80" >/dev/null 2>&1 &
+  kns port-forward svc/vote "${VOTE_LOCAL_PORT}:8080" >/dev/null 2>&1 &
   vote_pid=$!
   
-  kns port-forward svc/result "${RESULT_LOCAL_PORT}:80" >/dev/null 2>&1 &
+  kns port-forward svc/result "${RESULT_LOCAL_PORT}:8081" >/dev/null 2>&1 &
   result_pid=$!
   
   # Save PIDs
