@@ -26,7 +26,10 @@
           service: 'vote',
           env: 'demo',
           allowedTracingUrls: [
-            { match: '/', propagatorTypes: ['datadog'] }
+            'http://localhost:8080/',
+            'http://localhost:8080',
+            '/',
+            { match: /.*/, propagatorTypes: ['datadog'] }
           ],
           // Specify a version number to identify the deployed version of your application in Datadog
           // version: '1.0.0',
@@ -62,6 +65,10 @@
 
     <script>
       $(document).ready(function() {
+        // Store option names from the page for later use
+        var optionA = $(".a").text().trim();
+        var optionB = $(".b").text().trim();
+        
         // Handle form submission with AJAX for RUM/APM correlation
         $('#choice').on('submit', function(e) {
           e.preventDefault(); // Prevent traditional form submission
@@ -70,6 +77,14 @@
           var vote = clickedButton.val();
           
           // Use fetch() so RUM can inject correlation headers
+          console.log('Submitting vote:', vote);
+          console.log('RUM initialized:', !!window.DD_RUM);
+          
+          // Ensure RUM is ready before making the request
+          if (window.DD_RUM && window.DD_RUM.getInitConfiguration) {
+            console.log('RUM config:', window.DD_RUM.getInitConfiguration());
+          }
+          
           fetch('/', {
             method: 'POST',
             headers: {
@@ -88,14 +103,18 @@
         });
         
         function updateVoteDisplay(vote) {
+          // Reset both buttons first
+          $(".a").prop('disabled', false).css('opacity', '1');
+          $(".b").prop('disabled', false).css('opacity', '1');
+          
           if(vote == "a"){
             $(".a").prop('disabled', true);
-            $(".a").html('{{option_a}} <i class="fa fa-check-circle"></i>');
+            $(".a").html(optionA + ' <i class="fa fa-check-circle"></i>');
             $(".b").css('opacity','0.5');
           }
           if(vote == "b"){
             $(".b").prop('disabled', true);
-            $(".b").html('{{option_b}} <i class="fa fa-check-circle"></i>');
+            $(".b").html(optionB + ' <i class="fa fa-check-circle"></i>');
             $(".a").css('opacity','0.5');
           }
         }
