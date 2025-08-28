@@ -9,45 +9,19 @@ var express = require('express'),
 
 var port = process.env.PORT || 4000;
 
-// Winston logger configuration for Datadog correlation
-const winston = require('winston');
+// Winston logger following official documentation pattern
+const { createLogger, format, transports } = require('winston');
 
-// Custom format for Datadog correlation
-const datadogFormat = winston.format.combine(
-  winston.format.timestamp(),
-  winston.format.printf(({ timestamp, level, message, service = 'result', filename = 'server.js' }) => {
-    // Try to get trace info from Datadog APM if available
-    let traceId = 'N/A';
-    let spanId = 'N/A';
-    
-    try {
-      // This will be populated by Datadog APM when SSI is active
-      if (global.tracer && global.tracer.scope) {
-        const span = global.tracer.scope().active();
-        if (span) {
-          traceId = span.context().toTraceId();
-          spanId = span.context().toSpanId();
-        }
-      }
-    } catch (e) {
-      // Fallback to N/A if APM not available
-    }
-    
-    return `${timestamp} ${level.toUpperCase()} [${service}] [${filename}] [dd.service=${service} dd.env=demo dd.version=1.0.0 dd.trace_id=${traceId} dd.span_id=${spanId}] - ${message}`;
-  })
-);
-
-// Create winston logger
-const logger = winston.createLogger({
+const logger = createLogger({
   level: 'info',
-  format: datadogFormat,
+  exitOnError: false,
+  format: format.json(),
   transports: [
-    new winston.transports.Console({
+    new transports.Console({
       handleExceptions: true,
       handleRejections: true
     })
-  ],
-  exitOnError: false
+  ]
 });
 
 // Helper functions for easier logging
