@@ -281,138 +281,132 @@ verify(){
 }
 
 start_pf(){
-  [ -f "$PF_PIDFILE" ] && { warn "Port-forwards already running"; return; }
+  info "Setting up port-forwards..."
   
-  # Check if local ports are available
-  if lsof -ti:$VOTE_LOCAL_PORT >/dev/null 2>&1; then
-    die "Local port $VOTE_LOCAL_PORT is already in use. Kill the process or choose a different port."
-  fi
-  if lsof -ti:$RESULT_LOCAL_PORT >/dev/null 2>&1; then
-    die "Local port $RESULT_LOCAL_PORT is already in use. Kill the process or choose a different port."
-  fi
+  # Always clean up first (this now kills ALL processes properly)
+  stop_pf
   
-  # Wait for services to have endpoints (be ready)
-  info "Checking service readiness..."
-  for svc in vote result; do
-    attempt=1
-    while [ $attempt -le 30 ]; do
-      if kns get endpoints "$svc" -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null | grep -q .; then
-        break
-      fi
-      if [ $attempt -eq 30 ]; then
-        die "Service '$svc' not ready after 60 seconds"
-      fi
-      echo -n "."
-      sleep 2
-      attempt=$((attempt + 1))
-    done
-  done
-  
-  # Get service ports with better error handling
-  VOTE_PORT="$(kns get svc vote -o jsonpath='{.spec.ports[0].port}' 2>/dev/null)" || VOTE_PORT=80
-  RESULT_PORT="$(kns get svc result -o jsonpath='{.spec.ports[0].port}' 2>/dev/null)" || RESULT_PORT=80
+  # Quick check that deployments exist
+  info "Checking deployments..."
+  kns get deploy vote result >/dev/null || die "Vote/Result deployments not found"
   
   info "Starting port-forwards..."
   
-  # Start port-forwards with better error detection
-  > "$PF_PIDFILE"  # Create empty PID file
-  
-  # Vote service
-  kns port-forward svc/vote "${VOTE_LOCAL_PORT}:${VOTE_PORT}" >/dev/null 2>&1 &
+  # Start port-forwards (simplified - always use port 80 for target)
+  kns port-forward svc/vote "${VOTE_LOCAL_PORT}:80" >/dev/null 2>&1 &
   vote_pid=$!
-  echo "$vote_pid" >> "$PF_PIDFILE"
   
-  # Result service  
-  kns port-forward svc/result "${RESULT_LOCAL_PORT}:${RESULT_PORT}" >/dev/null 2>&1 &
+  kns port-forward svc/result "${RESULT_LOCAL_PORT}:80" >/dev/null 2>&1 &
   result_pid=$!
-  echo "$result_pid" >> "$PF_PIDFILE"
   
-  # Wait longer for establishment
-  sleep 5
+  # Save PIDs
+  {
+    echo "$vote_pid"
+    echo "$result_pid"
+  } > "$PF_PIDFILE"
   
-  # Verify port-forwards are actually working
-  vote_ok=false
-  result_ok=false
+  # Give port-forwards a moment to start
+  sleep 3
   
-  for i in 1 2 3; do
-    nc -z localhost "$VOTE_LOCAL_PORT" >/dev/null 2>&1 && vote_ok=true && break
-    sleep 1
-  done
-  
-  for i in 1 2 3; do
-    nc -z localhost "$RESULT_LOCAL_PORT" >/dev/null 2>&1 && result_ok=true && break
-    sleep 1
-  done
-  
-  # Report status
-  ok "Port-forward status:"
-  if [ "$vote_ok" = true ]; then
-    echo "• Vote   → http://localhost:${VOTE_LOCAL_PORT} ✅"
+  # Simple verification (just check if processes are still alive)
+  if kill -0 "$vote_pid" 2>/dev/null && kill -0 "$result_pid" 2>/dev/null; then
+    ok "Port-forwards started:"
+    echo "• Vote   → http://localhost:${VOTE_LOCAL_PORT}"  
+    echo "• Result → http://localhost:${RESULT_LOCAL_PORT}"
+    echo ""
+    info "Access your apps in the browser. Use './$(basename "$0") stop' to stop port-forwards."
   else
-    echo "• Vote   → http://localhost:${VOTE_LOCAL_PORT} ❌ (not responding)"
-  fi
-  
-  if [ "$result_ok" = true ]; then
-    echo "• Result → http://localhost:${RESULT_LOCAL_PORT} ✅"
-  else
-    echo "• Result → http://localhost:${RESULT_LOCAL_PORT} ❌ (not responding)"
-  fi
-  
-  if [ "$vote_ok" = false ] || [ "$result_ok" = false ]; then
-    warn "Some port-forwards may still be starting. Wait a moment and try accessing the URLs."
+    warn "Some port-forwards may have failed. Check with './$(basename "$0") check'"
   fi
 }
 
 stop_pf(){
-  [ -f "$PF_PIDFILE" ] || { warn "No port-forwards running"; return; }
+  info "Stopping all port-forwards..."
   
-  local pids_killed=0
-  while read -r pid; do
+  # Kill ALL kubectl port-forward processes (comprehensive cleanup)
+  local kubectl_pids=$(pgrep -f "kubectl.*port-forward.*${NS_APP}" 2>/dev/null || true)
+  local manual_pids=""
+  
+  # Also check PID file if it exists
+  if [ -f "$PF_PIDFILE" ]; then
+    manual_pids=$(cat "$PF_PIDFILE" 2>/dev/null | tr '\n' ' ')
+  fi
+  
+  local all_pids="$kubectl_pids $manual_pids"
+  local killed=0
+  
+  for pid in $all_pids; do
     if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
-      if kill "$pid" 2>/dev/null; then
-        pids_killed=$((pids_killed + 1))
-        # Wait a moment for graceful shutdown
-        sleep 0.5
-        # Force kill if still running
-        kill -9 "$pid" 2>/dev/null || true
-      fi
+      kill -TERM "$pid" 2>/dev/null || true
+      sleep 0.5
+      kill -KILL "$pid" 2>/dev/null || true
+      killed=$((killed + 1))
     fi
-  done < "$PF_PIDFILE"
+  done
+  
+  # Clean up any remaining processes using the ports
+  for port in $VOTE_LOCAL_PORT $RESULT_LOCAL_PORT; do
+    local port_pid=$(lsof -ti:$port 2>/dev/null || true)
+    if [ -n "$port_pid" ]; then
+      kill -KILL "$port_pid" 2>/dev/null || true
+      killed=$((killed + 1))
+    fi
+  done
   
   rm -f "$PF_PIDFILE"
   
-  if [ $pids_killed -gt 0 ]; then
-    ok "Port-forwards stopped ($pids_killed processes killed)."
+  if [ $killed -gt 0 ]; then
+    ok "Stopped $killed port-forward processes"
   else
-    warn "No active port-forward processes found to stop."
+    info "No port-forwards to stop"
   fi
 }
 
 check_pf(){
+  echo "🔍 Port-forward status:"
+  
   if [ ! -f "$PF_PIDFILE" ]; then
-    echo "❌ No port-forwards running"
+    echo "❌ No port-forwards running (no PID file)"
     return 1
   fi
   
-  local active_count=0
-  local total_count=0
+  local running=0
+  local total=0
   
   while read -r pid; do
     if [ -n "$pid" ]; then
-      total_count=$((total_count + 1))
+      total=$((total + 1))
       if kill -0 "$pid" 2>/dev/null; then
-        active_count=$((active_count + 1))
+        running=$((running + 1))
       fi
     fi
   done < "$PF_PIDFILE"
   
-  if [ $active_count -eq $total_count ] && [ $total_count -gt 0 ]; then
-    echo "✅ All $total_count port-forwards are running"
-    echo "• Vote   → http://localhost:${VOTE_LOCAL_PORT}"
-    echo "• Result → http://localhost:${RESULT_LOCAL_PORT}"
+  # Check if ports are actually listening
+  local vote_listening=false
+  local result_listening=false
+  
+  nc -z localhost "$VOTE_LOCAL_PORT" 2>/dev/null && vote_listening=true
+  nc -z localhost "$RESULT_LOCAL_PORT" 2>/dev/null && result_listening=true
+  
+  # Status report
+  if [ "$vote_listening" = true ]; then
+    echo "✅ Vote   → http://localhost:${VOTE_LOCAL_PORT}"
+  else
+    echo "❌ Vote   → http://localhost:${VOTE_LOCAL_PORT} (not accessible)"
+  fi
+  
+  if [ "$result_listening" = true ]; then
+    echo "✅ Result → http://localhost:${RESULT_LOCAL_PORT}"
+  else
+    echo "❌ Result → http://localhost:${RESULT_LOCAL_PORT} (not accessible)"
+  fi
+  
+  echo "📊 Processes: $running/$total running"
+  
+  if [ "$vote_listening" = true ] && [ "$result_listening" = true ]; then
     return 0
   else
-    echo "⚠️  $active_count of $total_count port-forwards are running"
     return 1
   fi
 }
