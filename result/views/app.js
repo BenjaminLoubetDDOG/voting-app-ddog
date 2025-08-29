@@ -36,6 +36,14 @@ app.controller('statsCtrl', function($scope, $http){
     $scope.statusMessage = 'Refreshing data...';
     $scope.statusClass = 'info';
     
+    // Datadog Browser Logs
+    if (window.DD_LOGS) {
+      DD_LOGS.logger.info('User refreshed data', { 
+        action: 'refresh',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
     $http.post('/api/refresh')
       .then(function(response) {
         $scope.loading = false;
@@ -69,6 +77,14 @@ app.controller('statsCtrl', function($scope, $http){
     $scope.statusMessage = 'Loading detailed stats...';
     $scope.statusClass = 'info';
     
+    // Datadog Browser Logs
+    if (window.DD_LOGS) {
+      DD_LOGS.logger.info('User requested stats', { 
+        action: 'get_stats',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
     $http.get('/api/stats')
       .then(function(response) {
         var stats = response.data;
@@ -99,6 +115,14 @@ app.controller('statsCtrl', function($scope, $http){
   $scope.exportResults = function() {
     $scope.statusMessage = 'Preparing export...';
     $scope.statusClass = 'info';
+    
+    // Datadog Browser Logs
+    if (window.DD_LOGS) {
+      DD_LOGS.logger.info('User exported results', { 
+        action: 'export',
+        timestamp: new Date().toISOString()
+      });
+    }
     
     $http.get('/api/export')
       .then(function(response) {

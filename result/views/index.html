@@ -25,7 +25,10 @@
           service: 'result',
           env: 'demo',
           allowedTracingUrls: [
-            { match: '/', propagatorTypes: ['datadog'] }
+            'http://localhost:8081/',
+            'http://localhost:8081',
+            '/',
+            { match: /.*/, propagatorTypes: ['datadog'] }
           ],
           // Specify a version number to identify the deployed version of your application in Datadog
           // version: '1.0.0',
@@ -39,6 +42,25 @@
         });
       })
     </script>
+    <script>
+      (function(h,o,u,n,d) {
+        h=h[d]=h[d]||{q:[],onReady:function(c){h.q.push(c)}}
+        d=o.createElement(u);d.async=1;d.src=n
+        n=o.getElementsByTagName(u)[0];n.parentNode.insertBefore(d,n)
+      })(window,document,'script','https://www.datadoghq-browser-agent.com/us1/v6/datadog-logs.js','DD_LOGS')
+      window.DD_LOGS.onReady(function() {
+          window.DD_LOGS.init({
+            clientToken: 'pube3da80f5045f15b082baffe60e94bafe',
+            site: 'datadoghq.com',
+            service: 'result',
+            env: 'demo',
+            forwardErrorsToLogs: true,
+            forwardConsoleLogs: 'all',      // Forward console.log, console.error, etc.
+            forwardReports: ['intervention', 'deprecation', 'csp_violation'],
+            sessionSampleRate: 100,
+          })
+        })
+      </script>
   </head>
   <body ng-controller="statsCtrl" >
      <div id="background-stats">

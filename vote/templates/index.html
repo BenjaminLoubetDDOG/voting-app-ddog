@@ -43,6 +43,25 @@
         });
       })
     </script>
+    <script>
+      (function(h,o,u,n,d) {
+        h=h[d]=h[d]||{q:[],onReady:function(c){h.q.push(c)}}
+        d=o.createElement(u);d.async=1;d.src=n
+        n=o.getElementsByTagName(u)[0];n.parentNode.insertBefore(d,n)
+      })(window,document,'script','https://www.datadoghq-browser-agent.com/us1/v6/datadog-logs.js','DD_LOGS')
+      window.DD_LOGS.onReady(function() {
+          window.DD_LOGS.init({
+            clientToken: 'pube3da80f5045f15b082baffe60e94bafe',
+            site: 'datadoghq.com',
+            service: 'vote',
+            env: 'demo',
+            forwardErrorsToLogs: true,
+            forwardConsoleLogs: 'all',      // Forward console.log, console.error, etc.
+            forwardReports: ['intervention', 'deprecation', 'csp_violation'],
+            sessionSampleRate: 100,
+          })
+        })
+      </script>
   </head>
   <body>
     <div id="content-container">
@@ -79,6 +98,16 @@
           // Use fetch() so RUM can inject correlation headers
           console.log('Submitting vote:', vote);
           console.log('RUM initialized:', !!window.DD_RUM);
+          
+          // Datadog Browser Logs - these will be sent to Datadog!
+          if (window.DD_LOGS) {
+            DD_LOGS.logger.info('User voted', { 
+              vote: vote, 
+              optionA: optionA, 
+              optionB: optionB,
+              userAgent: navigator.userAgent 
+            });
+          }
           
           // Ensure RUM is ready before making the request
           if (window.DD_RUM && window.DD_RUM.getInitConfiguration) {
