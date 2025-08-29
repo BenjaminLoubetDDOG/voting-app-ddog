@@ -7,8 +7,9 @@ using System.Threading;
 using Newtonsoft.Json;
 using Npgsql;
 using StackExchange.Redis;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
 
 namespace Worker
 {
@@ -18,19 +19,20 @@ namespace Worker
 
         static Program()
         {
-            // Configure structured JSON logging for Datadog correlation
-            var loggerFactory = LoggerFactory.Create(builder =>
-                builder.AddConsole(options =>
+            // Follow documentation pattern for log correlation
+            var host = Host.CreateDefaultBuilder()
+                .ConfigureLogging(logging =>
                 {
-                    options.FormatterName = ConsoleFormatterNames.Json;
-                }).AddJsonConsole(options =>
-                {
-                    options.IncludeScopes = true;
-                    options.TimestampFormat = "yyyy-MM-ddTHH:mm:ss.fffZ";
-                    options.UseUtcTimestamp = true;
+                    logging.ClearProviders();
+                    logging.AddConsole(opts =>
+                    {
+                        opts.IncludeScopes = true; // must include scopes so that correlation identifiers are added
+                        opts.FormatterName = "json";
+                    });
                 })
-            );
-            _logger = loggerFactory.CreateLogger<Program>();
+                .Build();
+            
+            _logger = host.Services.GetRequiredService<ILogger<Program>>();
         }
 
         public static int Main(string[] args)
